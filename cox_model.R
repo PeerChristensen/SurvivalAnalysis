@@ -51,7 +51,8 @@ cox_sf <- survfit(cox_mod, data = df,newdata = newdat)
 cox_surv <- surv_summary(cox_sf)
 head(cox_surv)
 cox_surv_df <- cbind(cox_surv,
-                     start_month = newdat[as.character(cox_surv$strata), ]) 
+                     start_month = newdat[as.character(cox_surv$strata), ]) %>%
+  as_tibble()
 
 # plot
 # ggsurvplot_df(cox_surv_df, color = "start_month",   legend.title = NULL, censor = FALSE)
