@@ -7,12 +7,33 @@ library(dtplyr)
 library(dplyr, warn.conflicts = FALSE)
 library(zoo)
 
-dt <- vroom::vroom("cohort_data_2020-04-01.csv")
+dt <- vroom::vroom("cohort_data_2020-04-05.csv") 
 
 dt <- lazy_dt(dt)
 
+# find early churners
+# start_dates <- dt %>%
+#   select(Customer_Key,Event,date) %>%
+#   filter(Event == "Start") %>%
+#   as_tibble()
+#   
+# cancel_dates <- dt %>%
+#   select(Customer_Key,Event,date) %>%
+#   filter(Event == "Cancel") %>%
+#   as_tibble()
+# 
+# remove_keys <- start_dates %>%
+#   inner_join(cancel_dates, by = "Customer_Key") %>%
+#   filter(date.y-date.x <= 30) %>% 
+#   pull(Customer_Key) %>%
+#   unique()
+
 # create cohorts
+
 df <- dt %>%
+ # filter(!Customer_Key %in% remove_keys) %>%
+  filter(Event != "Cancel") %>%
+  select(Customer_Key,EventDate_Key) %>%
   mutate(date = ymd(EventDate_Key)) %>% 
   filter(date <= floor_date(today(), unit = "months") - 1,
          date >= as.Date("2014-11-01")) %>%
@@ -20,7 +41,7 @@ df <- dt %>%
   #filter(date >= floor_date(today()-months(4))) %>%
   mutate(month = zoo::as.yearmon(date)) %>%
   group_by(Customer_Key) %>%
-  mutate(first = min(month)) %>%
+  mutate(first = min(month)) %>% 
   group_by(first, month) %>% 
   summarise(members = n()) %>%
   as_tibble() %>%
@@ -38,6 +59,9 @@ df <- df %>%
              by= c("first" = "start_month","time"="time")) %>%
   select(-contains("."),-upper,-lower,-strata)
 
+# correct last surv
+df[nrow(df)-1,ncol(df)] <- df[nrow(df)-2,ncol(df)]
+
 col <- 3
 row <- 1
 for (i in 1:(nrow(df))) {
@@ -47,11 +71,12 @@ for (i in 1:(nrow(df))) {
   col = col +1
 }
 
+
 df <- df %>% 
   select(-surv)
 
 # med tilgang
-df[nrow(df),ncol(df)] <- 3408 # fra forecast script (1 md)
+df[nrow(df),ncol(df)] <- 10206 # fra forecast script (1 md)
 
 df[,ncol(df)] <- round(df[,ncol(df)]) # afrund estimat
 
@@ -111,6 +136,7 @@ mean_retention <- retention %>%
   mutate(month = as.numeric(month)) 
 
 retention %>% 
+  filter(cohort >= "Apr 2018") %>%
   ggplot(aes(x=month,y=retention, colour = factor(cohort), group=factor(cohort))) +
   geom_line(size=1.5) +
   geom_point(size=1.5) +
@@ -128,6 +154,7 @@ mean_retention %>%
 
 # retention table
 retention %>%
+  #filter(cohort >= "Apr 2018") %>%
   filter(month>0) %>%
   ggplot(aes(x = as.numeric(month), y = reorder(cohort, desc(cohort)))) +
   geom_raster(aes(fill = log(retention))) +

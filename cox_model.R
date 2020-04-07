@@ -29,7 +29,8 @@ df <- read_csv("survival_data.csv") %>%
          start_month = factor(zoo::as.yearmon(StartDate)))
 
 df <- df %>%
-  mutate_if(is.character,as.factor) #%>%
+  mutate_if(is.character,as.factor)# %>%
+  #filter(MembershipDays > 30)#%>%
 # filter(StartDate >= as.Date("2018-01-01"),
 #       StartDate <= today()-364)
 
@@ -55,7 +56,7 @@ cox_surv_df <- cbind(cox_surv,
   as_tibble()
 
 # plot
-# ggsurvplot_df(cox_surv_df, color = "start_month",   legend.title = NULL, censor = FALSE)
+ ggsurvplot_df(cox_surv_df, color = "start_month",   legend.title = NULL, censor = FALSE)
 # ggsurvplot_df(cox_surv_df, color = "start_month",   legend.title = NULL, censor = FALSE,conf.int = T) +
 #   facet_wrap(~start_month) +
 #   theme(legend.position="none")
