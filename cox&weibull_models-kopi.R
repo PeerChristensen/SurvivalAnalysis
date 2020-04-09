@@ -69,7 +69,7 @@ p1 <- km_df %>%
 
 wbmod <- survreg(Surv(months, Cancelled) ~ 1, df) 
 
-surv <- seq(.99, .01, by = -.01)
+surv <- seq(.99, .001, by = -.001)
 
 t <- predict(wbmod, type = "quantile", p = 1 - surv, newdata = data.frame(1))
 
