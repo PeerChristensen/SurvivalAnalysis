@@ -14,45 +14,46 @@ dt <- lazy_dt(dt)
 # -------------------------------------------------------------------
 # method 1
 # -------------------------------------------------------------------
-# df <- dt                             %>%
-#   select(Customer_Key,EventDate_Key)   %>%
-#   mutate(date = ymd(EventDate_Key))   %>%
-#   filter(date >= floor_date(today()-years(1))) %>%
-#   mutate(month = floor_date(date,unit = "month")) %>%
-#   group_by(Customer_Key)                    %>%
-#   mutate(cohortMonth = min(month)) %>%
-#   mutate(cohortIndex = round(as.numeric((as.yearmon(month) - as.yearmon(cohortMonth)) * 12) + 1),0) %>%
-#   ungroup() 
-# 
-# retention_table <- df                       %>% 
-#   group_by(cohortMonth,cohortIndex)         %>%
-#   summarise(n = length(unique(Customer_Key))) %>%
-#   ungroup()                                 %>%
-#   as_tibble() %>%
-#   pivot_wider(names_from = cohortIndex, values_from = n)
-# 
-# cohort_sizes <- retention_table$`1`
-# 
-# #for (col in 1:ncol(retention_rate)) {
-# #    retention_rate[,col] = (retention_rate[,col] / cohort_sizes) * 100
-# #  }
-# 
-# # calculate percentages for each cohort
-# 
-# retention_rate <- retention_table  %>%
-#   select(-cohortMonth)             %>%
-#   apply(2,function(x) round((x / cohort_sizes) * 100,0)) %>%
-#   as_tibble()                      %>%
-#   mutate(cohortMonth = retention_table$cohortMonth) %>%
-#   select(cohortMonth, everything())
-# 
-# # melt data frame
-# 
-# retention_rate_melt <- retention_rate   %>%
-#   melt(id.vars = 'cohortMonth',na.rm=T) %>%
-#   mutate(date_col    = glue::glue("{months(cohortMonth,abbreviate = T)} {year(cohortMonth)}"),
-#          cohortMonth = as.numeric(cohortMonth))
-# 
+df <- dt                             %>%
+  #filter(Customer_Key == 940318 ) %>% 
+  select(Customer_Key,EventDate_Key)   %>%
+  mutate(date = ymd(EventDate_Key))   %>%
+  #filter(date >= floor_date(today()-years(1))) %>%
+  mutate(month = floor_date(date,unit = "month")) %>%
+  group_by(Customer_Key)                    %>%
+  mutate(cohortMonth = min(month)) %>%
+  mutate(cohortIndex = round(as.numeric((as.yearmon(month) - as.yearmon(cohortMonth)) * 12) + 1),0) %>%
+  ungroup()
+
+retention_table <- df                       %>%
+  group_by(cohortMonth,cohortIndex)         %>%
+  summarise(n = length(unique(Customer_Key))) %>%
+  ungroup()                                 %>%
+  as_tibble() %>%
+  pivot_wider(names_from = cohortIndex, values_from = n)
+
+cohort_sizes <- retention_table$`1`
+
+#for (col in 1:ncol(retention_rate)) {
+#    retention_rate[,col] = (retention_rate[,col] / cohort_sizes) * 100
+#  }
+
+# calculate percentages for each cohort
+
+retention_rate <- retention_table  %>%
+  select(-cohortMonth)             %>%
+  apply(2,function(x) round((x / cohort_sizes) * 100,0)) %>%
+  as_tibble()                      %>%
+  mutate(cohortMonth = retention_table$cohortMonth) %>%
+  select(cohortMonth, everything())
+
+# melt data frame
+
+retention_rate_melt <- retention_rate   %>%
+  melt(id.vars = 'cohortMonth',na.rm=T) %>%
+  mutate(date_col    = glue::glue("{months(cohortMonth,abbreviate = T)} {year(cohortMonth)}"),
+         cohortMonth = as.numeric(cohortMonth))
+
 # # plot retention heatmap
 # 
 # retention_rate_melt     %>%
@@ -90,6 +91,7 @@ dt <- lazy_dt(dt)
 
 # create cohorts
 df <- dt %>%
+ # filter(Customer_Key == 11912164) %>% 
   mutate(date = ymd(EventDate_Key)) %>% 
   filter(date <= floor_date(today(), unit = "months") - 1,
          date >= as.Date("2014-11-01")) %>%
@@ -106,8 +108,6 @@ df <- dt %>%
   mutate(cohort = row_number()) %>%
   select(first,cohort,everything()) %>% 
   mutate_if(is.numeric, list(~replace_na(., 0))) #breaks column shifts below
-
-
 
 #new_col <- ncol(df) -2
 
